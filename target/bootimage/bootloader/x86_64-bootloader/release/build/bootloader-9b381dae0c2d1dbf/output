@@ -1,0 +1,7 @@
+cargo:rerun-if-changed=/home/kierand/Documents/Development/Rust-OS/rust_os/Cargo.toml
+cargo:rustc-link-search=native=/home/kierand/Documents/Development/Rust-OS/rust_os/target/bootimage/bootloader/x86_64-bootloader/release/build/bootloader-9b381dae0c2d1dbf/out
+cargo:rustc-link-lib=static=kernel_bin-cool_os
+cargo:rerun-if-env-changed=KERNEL
+cargo:rerun-if-env-changed=KERNEL_MANIFEST
+cargo:rerun-if-changed=/home/kierand/Documents/Development/Rust-OS/rust_os/target/x86_64-rust_os/debug/cool_os
+cargo:rerun-if-changed=build.rs
