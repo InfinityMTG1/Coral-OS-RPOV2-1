@@ -2,8 +2,13 @@
 #![no_std] // stop linker from using rust stdlib from linux??
 #![no_main] // disable Rust entry points
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
+#![test_runner(ether_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+
+use core::panic::PanicInfo;
+mod serial;
+mod vga_buffer;
+
 pub trait Testable {
     fn run(&self) -> ();
 }
@@ -17,6 +22,7 @@ where
         serial_println!("[ok]");
     }
 }
+
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Testable]) {
     serial_println!("Running {} tests", tests.len());
@@ -26,10 +32,29 @@ fn test_runner(tests: &[&dyn Testable]) {
     exit_qemu(QemuExitCode::Success);
 }
 
-use core::panic::PanicInfo;
+//function name will not be mangled
+//Program entry point for the linker, which is named start by default
 
-mod serial;
-mod vga_buffer;
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    println!("Hello, World!");
+
+    ether_os::init(); // (Currently) intialises the IDT
+
+    x86_64::instructions::interrupts::int3();
+    // trigger a page fault
+    // unsafe {
+    // *(0xdeadbeef as *mut u8) = 42;
+    // }
+
+    // Only call test_main() when using the test configuration
+    #[cfg(test)]
+    test_main();
+
+    println!("It did not crash!");
+    loop {}
+}
+
 // Called upon panic in debug or release configuration
 #[cfg(not(test))]
 #[panic_handler]
@@ -37,25 +62,12 @@ fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
+
 // Called upon panic in test configuration
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    serial_println!("[failed]\n");
-    serial_println!("Error: {}\n", info);
-    exit_qemu(QemuExitCode::Failed);
-    loop {}
-}
-
-//function name will not be mangled
-//Program entry point for the linker, which is named start by default
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    println!("Hello, World!");
-    // only call test_main() when using the test configuration
-    #[cfg(test)]
-    test_main();
-
+    println!("{}", info);
     loop {}
 }
 
