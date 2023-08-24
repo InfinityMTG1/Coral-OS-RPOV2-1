@@ -43,15 +43,32 @@ pub extern "C" fn _start() -> ! {
 
     x86_64::instructions::interrupts::int3();
     // trigger a page fault
-    // unsafe {
-    // *(0xdeadbeef as *mut u8) = 42;
-    // }
+    unsafe {
+        *(0xdeadbeef as *mut u8) = 42;
+    }
 
     // Only call test_main() when using the test configuration
     #[cfg(test)]
     test_main();
 
     println!("It did not crash!");
+
+    #[cfg(not(debug_assertions))]
+    println!(
+        "
+|================================================================|
+|                 ###\\     Welcome to Coral/OS                   |
+|    ####          ###     Written by execat in Rust             |
+|    ####           ###    Wishing you a wonderful day ahead!    |
+|                    ##)                                         |
+|                    ###                                         |
+|                    ##)                                         |
+|    ####           ###                                          |
+|    ####          ###                                           |
+|                 ###/                                           |
+|================================================================|
+    "
+    );
     loop {}
 }
 
