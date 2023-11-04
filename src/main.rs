@@ -52,7 +52,6 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     println!("It did not crash!");
-
     #[cfg(not(debug_assertions))]
     println!(
         "
@@ -69,7 +68,12 @@ pub extern "C" fn _start() -> ! {
 |================================================================|
     "
     );
-    loop {}
+    // loop {
+    //     use ether_os::print;
+    //     print!("-");
+    //     for _ in 0..10000 {}
+    // }
+    ether_os::hlt_loop();
 }
 
 // Called upon panic in debug or release configuration
@@ -77,7 +81,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    ether_os::hlt_loop();
 }
 
 // Called upon panic in test configuration
@@ -85,7 +89,7 @@ fn panic(info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    ether_os::hlt_loop();
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

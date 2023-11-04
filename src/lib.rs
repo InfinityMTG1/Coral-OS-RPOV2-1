@@ -6,6 +6,8 @@
 #![feature(abi_x86_interrupt)]
 
 use core::panic::PanicInfo;
+
+use interrupts::PIC_1_OFFSET;
 pub mod gdt;
 pub mod interrupts;
 pub mod serial;
@@ -38,6 +40,8 @@ pub fn test_runner(tests: &[&dyn Testable]) {
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable();
 }
 
 // Panic Handler to be used in test configuration;
@@ -46,7 +50,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 ///	Entry point for `cargo test`
@@ -55,7 +59,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 // Panic handler for `cargo test`
@@ -79,5 +83,11 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
     unsafe {
         let mut port = Port::new(0xf4);
         port.write(exit_code as u32);
+    }
+}
+
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
     }
 }
