@@ -42,10 +42,30 @@ pub extern "C" fn _start() -> ! {
     ether_os::init(); // (Currently) intialises the IDT
 
     // x86_64::instructions::interrupts::int3();
+
     // trigger a page fault, which at the moment is unhandled so leads to a double fault
     // unsafe {
-    // *(0xdeadbeef as *mut u8) = 42;
+    //     *(0xdeadbeef as *mut u8) = 42;
     // }
+
+    let ptr = 0x207a0a as *mut u8;
+    unsafe {
+        let x = *ptr;
+        println!("read worked; {:#?} has value {}", ptr, x);
+    }
+
+    use x86_64::registers::control::Cr3;
+
+    let (level_4_page_table, _) = Cr3::read();
+    println!(
+        "Level 4 page table at {:?}",
+        level_4_page_table.start_address()
+    );
+
+    // unsafe {
+    //     *ptr = 42;
+    // }
+    // println!("write worked");
 
     // Only call test_main() when using the test configuration
     #[cfg(test)]
