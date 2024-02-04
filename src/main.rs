@@ -34,25 +34,20 @@ fn test_runner(tests: &[&dyn Testable]) {
 
 //function name will not be mangled
 //Program entry point for the linker, which is named start by default
+use bootloader::{entry_point, BootInfo};
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+entry_point!(kernel_main);
+// boot info struct is used so that the memory map, which is determined during the bootloader
+// stage, can be passed to the operating system.
+// specifying extern "C" and no_mangle for the entrypoint is no longer necessary because both are
+// handled by the entry_point! macro
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("Hello, World!");
 
     ether_os::init(); // (Currently) intialises the IDT
 
     // x86_64::instructions::interrupts::int3();
-
-    // trigger a page fault, which at the moment is unhandled so leads to a double fault
-    // unsafe {
-    //     *(0xdeadbeef as *mut u8) = 42;
-    // }
-
-    let ptr = 0x207a0a as *mut u8;
-    unsafe {
-        let x = *ptr;
-        println!("read worked; {:#?} has value {}", ptr, x);
-    }
 
     use x86_64::registers::control::Cr3;
 
