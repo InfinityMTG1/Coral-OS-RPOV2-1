@@ -10,6 +10,7 @@ use core::panic::PanicInfo;
 use interrupts::PIC_1_OFFSET;
 pub mod gdt;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 pub mod vga_buffer;
 
