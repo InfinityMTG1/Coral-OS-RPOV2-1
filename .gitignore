@@ -1,3 +1,5 @@
 target/
 .DS_Store
 .idea/
+tmux-client-63655.log
+tmux-server-63657.log
