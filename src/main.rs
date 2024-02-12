@@ -50,7 +50,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     // x86_64::instructions::interrupts::int3();
 
-    use ether_os::memory::active_level_4_table;
+    // use ether_os::memory::active_level_4_table;
     use x86_64::registers::control::Cr3;
     use x86_64::VirtAddr;
 
