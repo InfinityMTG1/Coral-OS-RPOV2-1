@@ -35,7 +35,6 @@ fn test_runner(tests: &[&dyn Testable]) {
 //function name will not be mangled
 //Program entry point for the linker, which is named start by default
 use bootloader::{entry_point, BootInfo};
-use ether_os::memory::active_level_4_table;
 
 entry_point!(kernel_main);
 // boot info struct is used so that the memory map, which is determined during the bootloader
@@ -44,6 +43,9 @@ entry_point!(kernel_main);
 // handled by the entry_point! macro
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use ether_os::memory;
+    use x86_64::{structures::paging::Translate, VirtAddr};
+
     println!("Hello, World!");
 
     ether_os::init(); // (Currently) intialises the IDT
@@ -52,7 +54,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     // use ether_os::memory::active_level_4_table;
     use x86_64::registers::control::Cr3;
-    use x86_64::VirtAddr;
+    // use x86_64::VirtAddr;
 
     let (level_4_page_table, _) = Cr3::read();
     println!(
@@ -61,25 +63,23 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     );
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
+    let mapper = unsafe { memory::init(phys_mem_offset) };
 
-    for (i, entry) in l4_table.iter().enumerate() {
-        use x86_64::structures::paging::PageTable;
+    let addresses = [
+        // indentity-mapped vga text mode buffer (physical address == virtual address)
+        0xb8000,
+        // a code page
+        0x201008,
+        // a stack page
+        0x0100_0020_1a10,
+        // virtual address mapped to physical address 0
+        boot_info.physical_memory_offset,
+    ];
 
-        // get the physical address from the entry and convert it
-        if !entry.is_unused() {
-            let phys = entry.frame().unwrap().start_address();
-            let virt = phys.as_u64() + boot_info.physical_memory_offset;
-            let ptr = VirtAddr::new(virt).as_mut_ptr();
-            let l3_table: &PageTable = unsafe { &*ptr };
-
-            println!("L4 Entry {}: {:?}", i, entry);
-            for (i, entry) in l3_table.iter().enumerate() {
-                if !entry.is_unused() {
-                    println!("L3 Entry {}: {:?}", i, entry);
-                }
-            }
-        }
+    for &address in &addresses {
+        let virt = VirtAddr::new(address);
+        let phys = mapper.translate_addr(virt);
+        println!("{:?} -> {:?}", virt, phys);
     }
 
     // unsafe {
