@@ -2,7 +2,7 @@
 #![no_std] // stop linker from using rust stdlib from linux??
 #![no_main] // disable Rust entry points
 #![feature(custom_test_frameworks)]
-#![test_runner(ether_os::test_runner)]
+#![test_runner(coral_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
@@ -43,16 +43,16 @@ entry_point!(kernel_main);
 // handled by the entry_point! macro
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use ether_os::memory;
+    use coral_os::memory;
     use x86_64::{structures::paging::Translate, VirtAddr};
 
     println!("Hello, World!");
 
-    ether_os::init(); // (Currently) intialises the IDT
+    coral_os::init(); // (Currently) intialises the IDT
 
     // x86_64::instructions::interrupts::int3();
 
-    // use ether_os::memory::active_level_4_table;
+    // use coral_os::memory::active_level_4_table;
     use x86_64::registers::control::Cr3;
     // use x86_64::VirtAddr;
 
@@ -109,11 +109,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     "
     );
     // loop {
-    //     use ether_os::print;
+    //     use coral_os::print;
     //     print!("-");
     //     for _ in 0..10000 {}
     // }
-    ether_os::hlt_loop();
+    coral_os::hlt_loop();
 }
 
 // Called upon panic in debug or release configuration
@@ -121,7 +121,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    ether_os::hlt_loop();
+    coral_os::hlt_loop();
 }
 
 // Called upon panic in test configuration
@@ -129,7 +129,7 @@ fn panic(info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    ether_os::hlt_loop();
+    coral_os::hlt_loop();
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

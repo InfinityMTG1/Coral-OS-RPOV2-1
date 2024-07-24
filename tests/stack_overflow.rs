@@ -2,8 +2,8 @@
 #![no_main]
 #![feature(abi_x86_interrupt)]
 use core::panic::PanicInfo;
-use ether_os::serial_print;
-use ether_os::{exit_qemu, serial_println, QemuExitCode};
+use coral_os::serial_print;
+use coral_os::{exit_qemu, serial_println, QemuExitCode};
 use lazy_static::lazy_static;
 use x86_64::structures::idt::InterruptDescriptorTable;
 use x86_64::structures::idt::InterruptStackFrame;
@@ -14,7 +14,7 @@ lazy_static! {
         unsafe {
             idt.double_fault
                 .set_handler_fn(test_double_fault_handler)
-                .set_stack_index(ether_os::gdt::DOUBLE_FAULT_IST_INDEX);
+                .set_stack_index(coral_os::gdt::DOUBLE_FAULT_IST_INDEX);
         }
         idt
     };
@@ -37,7 +37,7 @@ pub fn init_test_idt() {
 pub extern "C" fn _start() -> ! {
     serial_print!("stack_overflow::stack_overflow...\t");
 
-    ether_os::gdt::init();
+    coral_os::gdt::init();
     init_test_idt();
 
     // trigger a stack overflow
@@ -54,5 +54,5 @@ fn stack_overflow() {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    ether_os::test_panic_handler(info)
+    coral_os::test_panic_handler(info)
 }
