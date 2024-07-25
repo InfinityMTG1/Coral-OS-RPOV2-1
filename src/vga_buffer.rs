@@ -55,14 +55,20 @@ impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
-            byte => {
-                if self.column_position >= BUFFER_WIDTH {
+            byte => 'backspace: {
+                if byte != 8 && self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
 
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
 
+                if byte == 254 {
+                    self.clear_character(row, col);
+                    break 'backspace;
+                } else {
+                    // crate::serial_print!("{}", byte);
+                }
                 let color_code = self.color_code;
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
@@ -91,6 +97,28 @@ impl Writer {
         };
         for col in 0..BUFFER_WIDTH {
             self.buffer.chars[row][col].write(blank);
+        }
+    }
+
+    pub fn clear_character(&mut self, row: usize, column: usize) {
+        // Implement a function that clears the character at a given
+        // position and moves the cursor accordingly
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code,
+        };
+        if self.column_position == 0 {
+            self.buffer.chars[row][column].write(blank);
+            for row in (0..BUFFER_HEIGHT - 1).rev() {
+                for col in 0..BUFFER_WIDTH {
+                    let character = self.buffer.chars[row][col].read();
+                    self.buffer.chars[row + 1][col].write(character);
+                    self.column_position = BUFFER_WIDTH - 1;
+                }
+            }
+        } else {
+            self.buffer.chars[row][column - 1].write(blank);
+            self.column_position -= 1;
         }
     }
 
