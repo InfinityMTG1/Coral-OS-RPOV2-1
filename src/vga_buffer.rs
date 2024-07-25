@@ -56,7 +56,7 @@ impl Writer {
         match byte {
             b'\n' => self.new_line(),
             byte => 'backspace: {
-                if byte != 8 && self.column_position >= BUFFER_WIDTH {
+                if byte != 254 && self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
 
@@ -113,7 +113,7 @@ impl Writer {
                 for col in 0..BUFFER_WIDTH {
                     let character = self.buffer.chars[row][col].read();
                     self.buffer.chars[row + 1][col].write(character);
-                    self.column_position = BUFFER_WIDTH - 1;
+                    self.column_position = BUFFER_WIDTH;
                 }
             }
         } else {
