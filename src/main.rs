@@ -35,6 +35,7 @@ fn test_runner(tests: &[&dyn Testable]) {
 //function name will not be mangled
 //Program entry point for the linker, which is named start by default
 use bootloader::{entry_point, BootInfo};
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 entry_point!(kernel_main);
 // boot info struct is used so that the memory map, which is determined during the bootloader
@@ -44,7 +45,10 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use coral_os::memory;
-    use x86_64::{structures::paging::Translate, VirtAddr};
+    use x86_64::{
+        structures::paging::{Page, Translate},
+        VirtAddr,
+    };
 
     println!("Hello, World!");
 
@@ -63,8 +67,14 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     );
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = memory::EmptyFrameAllocator;
 
+    let page = Page::containing_address(VirtAddr::new(0));
+    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+    let mut a: u64 = 23897413561230487;
     let addresses = [
         // indentity-mapped vga text mode buffer (physical address == virtual address)
         0xb8000,
@@ -113,6 +123,19 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     //     print!("-");
     //     for _ in 0..10000 {}
     // }
+
+    loop {
+        let mut i: isize = 0;
+        while i < 500 {
+            let mut x: SmallRng = SmallRng::seed_from_u64(a);
+            a = x.gen();
+            unsafe { page_ptr.offset(i).write_volatile(a) }
+            i += 1;
+        }
+        if a < 1238950 {
+            break;
+        }
+    }
     coral_os::hlt_loop();
 }
 
