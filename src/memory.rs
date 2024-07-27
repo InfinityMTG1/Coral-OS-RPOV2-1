@@ -5,6 +5,13 @@ use x86_64::{
     PhysAddr, VirtAddr,
 };
 
+pub struct EmptyFrameAllocator;
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        None
+    }
+}
+
 pub fn create_example_mapping(
     page: Page,
     mapper: &mut OffsetPageTable,
@@ -22,7 +29,7 @@ pub fn create_example_mapping(
 }
 
 /// Initialize a new OffsetPageTable.
-///
+/// # Safety
 /// This function is unsafe because the caller must guarantee that the
 /// complete physical memory is mapped to virtual memory at the passed
 /// `physical_memory_offset`. Also, this function must be only called once
@@ -34,7 +41,7 @@ pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static>
 }
 
 /// Returns a mutable reference to the active level 4 table.
-///
+/// # Safety
 /// This function is unsafe because the caller must guarantee that the
 /// complete physical memory is mapped to virtual memory at the passed
 /// `physical_memory_offset`. Also, this function must be only called once
