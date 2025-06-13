@@ -44,11 +44,28 @@ entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use coral_os::memory;
-    use x86_64::{structures::paging::Translate, VirtAddr};
+    use x86_64::{
+        structures::paging::{Page, Translate},
+        VirtAddr,
+    };
 
     println!("Hello, World!");
 
     coral_os::init(); // (Currently) intialises the IDT
+
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator =
+        unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
+
+    // map an unused page
+    let mut page = Page::containing_address(VirtAddr::new(0));
+    page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
+    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+
+    // write the string `New!` to the screen through the new mapping
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+    unsafe { page_ptr.offset(400).write_volatile(0x_0f21_0f77_0f65_0f4e) };
 
     // x86_64::instructions::interrupts::int3();
 
@@ -61,9 +78,6 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         "Level 4 page table at {:?}",
         level_4_page_table.start_address()
     );
-
-    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_offset) };
 
     let addresses = [
         // indentity-mapped vga text mode buffer (physical address == virtual address)
